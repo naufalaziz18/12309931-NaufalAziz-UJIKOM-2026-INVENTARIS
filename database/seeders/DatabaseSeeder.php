@@ -12,11 +12,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
+        // Akun Admin - Gunakan updateOrCreate juga!
+        \App\Models\User::updateOrCreate(
+            ['email' => 'admin@gmail.com'], // Cek berdasarkan ini
+            [
+                'name' => 'Administrator',
+                'password' => bcrypt('password'),
+                'role' => 'admin',
+            ]
+        );
 
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        // Akun Operator - Sudah benar
+        \App\Models\User::updateOrCreate(
+            ['email' => 'operator@gmail.com'],
+            [
+                'name' => 'Operator System',
+                'password' => bcrypt('password'),
+                'role' => 'operator',
+            ]
+        );
     }
 }
