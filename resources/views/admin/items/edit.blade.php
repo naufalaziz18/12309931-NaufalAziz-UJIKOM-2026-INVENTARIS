@@ -41,12 +41,13 @@
                     </select>
                 </div>
 
-                {{-- Stok Saat Ini (Read Only / Label Saja) --}}
-                <div class="space-y-2">
-                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Stok Saat Ini</label>
-                    <input type="number" name="stock" value="{{ $product->stock }}" required
-                        class="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-indigo-600 outline-none">
-                </div>
+                {{-- Stok Saat Ini --}}
+<div class="space-y-2">
+    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Stok Saat Ini</label>
+    {{-- Ganti $product->stock jadi $product->total_stock --}}
+    <input type="number" name="stock" value="{{ $product->total_stock }}" required
+        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-semibold text-slate-700">
+</div>
 
                 {{-- Update Foto --}}
                 <div class="space-y-2">

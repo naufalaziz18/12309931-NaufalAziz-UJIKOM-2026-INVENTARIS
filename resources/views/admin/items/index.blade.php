@@ -10,7 +10,17 @@
             <p class="text-slate-400 text-xs font-medium">Kelola ketersediaan stok dan pantau data peminjaman barang.</p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="{{ route('products.admin.items.export.all') }}"
+            {{-- Tombol PDF Baru --}}
+            <a href="{{ route('admin.items.export.pdf') }}"
+                class="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-500" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                Export PDF
+            </a>
+            <a href="{{ route('admin.items.export.all') }}"
                 class="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm active:scale-95">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -38,6 +48,7 @@
                 <thead class="bg-slate-50/50 text-[10px] uppercase text-slate-500 font-black border-b border-slate-100">
                     <tr>
                         <th class="px-8 py-5">#</th>
+                        <th class="px-4 py-5">Preview</th>
                         <th class="px-4 py-5">Category</th>
                         <th class="px-4 py-5">Item Name</th>
                         <th class="px-4 py-5 text-center">Available Stock</th>
@@ -53,6 +64,27 @@
                                     class="text-xs font-bold text-slate-400 group-hover:text-indigo-600 transition-colors italic">
                                     {{ $loop->iteration }}
                                 </span>
+                            </td>
+
+                            {{-- KOLOM GAMBAR BARU --}}
+                            <td class="px-4 py-6">
+                                <div
+                                    class="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-sm group-hover:border-indigo-100 transition-all">
+                                    @if($product->image)
+                                        {{-- Tambahkan cursor-zoom-in dan onclick --}}
+                                        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}"
+                                            class="w-full h-full object-cover cursor-zoom-in"
+                                            onclick="previewImage('{{ asset('storage/' . $product->image) }}', '{{ $product->name }}')">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                    @endif
+                                </div>
                             </td>
 
                             <td class="px-4 py-6">
@@ -72,10 +104,12 @@
                             <td class="px-4 py-6 text-center">
                                 <div class="inline-flex items-center px-3 py-1 bg-indigo-50 rounded-xl">
                                     <span class="text-sm font-black text-indigo-600">
-                                        {{ $product->total_stock ?? 0 }} 
+                                        {{ $product->total_stock ?? 0 }}
                                     </span>
                                 </div>
                             </td>
+
+
 
                             <td class="px-4 py-6 text-center">
                                 @php
@@ -183,19 +217,18 @@
     </style>
 
     <script>
-        window.confirmDelete = function (id) {
+        window.previewImage = function (url, name) {
             Swal.fire({
-                title: 'Hapus Item?',
-                text: "Data barang akan hilang selamanya dari inventory.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Hapus',
-                cancelButtonText: 'Batal',
-                customClass: { popup: 'swal-custom-popup', confirmButton: 'swal-confirm-btn', cancelButton: 'swal-cancel-btn' },
-                buttonsStyling: false,
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) document.getElementById('del-' + id).submit();
+                title: name,
+                imageUrl: url,
+                imageAlt: name,
+                showConfirmButton: false,
+                showCloseButton: true,
+                background: '#ffffff',
+                customClass: {
+                    popup: 'swal-custom-popup', // Biar tetep pake style rounded lo yang keren
+                    image: 'rounded-2xl border-4 border-slate-50 shadow-lg'
+                }
             });
         }
     </script>

@@ -169,19 +169,24 @@
             <div class="title-area">
                 <h6
                     style="color: #4e73df; font-weight: bold; font-size: 11px; text-transform: uppercase; margin-bottom: 4px;">
-                    System Management</h6>
+                    System Management
+                </h6>
                 <h2>Daftar {{ $title }}</h2>
             </div>
+
             <div style="display: flex; gap: 8px;">
                 {{-- TOMBOL EXPORT EXCEL --}}
-                <a href="{{ route('admin.users.export', str_contains(strtolower($title), 'admin') ? 'admin' : 'operator') }}"
+                {{-- Logika: Jika title mengandung 'admin', kirim parameter 'admin', jika tidak kirim 'operator' --}}
+                <a href="{{ route('admin.admin.users.export', str_contains(strtolower($title), 'admin') ? 'admin' : 'operator') }}"
                     class="btn-add-pro btn-excel">
                     <i class="fas fa-file-excel me-2" style="font-size: 14px;"></i>
-                    Export {{ str_replace('Data ', '', $title) }} {{-- Biar teksnya gak kepanjangan --}}
+                    Export {{ str_replace('Data ', '', $title) }}
                 </a>
 
                 {{-- TOMBOL TAMBAH --}}
-                <a href="{{ route('admin.users.create') }}" class="btn-add-pro">
+                {{-- Logika: Sama seperti export, nentuin role buat form create --}}
+                <a href="{{ route('admin.users.create', ['role' => str_contains(strtolower($title), 'admin') ? 'admin' : 'operator']) }}"
+                    class="btn-add-pro">
                     <i class="fas fa-plus me-2" style="font-size: 12px;"></i>
                     Tambah {{ str_replace('Data ', '', $title) }}
                 </a>

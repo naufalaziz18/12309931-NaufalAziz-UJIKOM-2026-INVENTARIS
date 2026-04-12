@@ -25,12 +25,9 @@ class UserController extends Controller
 
     public function indexAdmin()
     {
-        $users = User::where('role', 'admin')->paginate(10);
-
-        // Kirim variabel 'title' di sini
         return view('admin.users.index', [
-            'users' => $users,
-            'title' => 'Data Admin' // Ini yang bikin error kalau gak ada
+            'users' => User::where('role', 'admin')->paginate(10),
+            'title' => 'Data Admin' // <-- Ini wajib ada
         ]);
     }
 
@@ -49,17 +46,22 @@ class UserController extends Controller
      */
     public function exportExcel($role)
     {
-        $fileName = 'data-' . $role . '-' . date('Y-m-d') . '.xlsx';
+        // Pastikan variabel $role isinya valid (admin/operator)
+        $fileName = 'Data_' . ucfirst($role) . '_' . date('Y-m-d') . '.xlsx';
+
         return Excel::download(new UsersExport($role), $fileName);
     }
 
     /**
      * Form Tambah User
      */
-    public function create()
+    public function create(Request $request)
     {
+        // Ambil role dari URL (admin atau operator)
+        $role = $request->query('role', 'admin');
         return view('admin.users.create', [
-            'title' => 'Tambah User'
+            'title' => 'Tambah ' . ucfirst($role),
+            'role' => $role
         ]);
     }
 
@@ -75,14 +77,20 @@ class UserController extends Controller
             'role' => 'required|in:admin,operator',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
         ]);
 
-        return redirect()->route('admin.users.index')->with('success', 'User berhasil ditambahkan!');
+        // LOGIKA REDIRECT NYAMBUNG:
+        // Jika yang dibuat admin, balik ke index admin. Jika operator, balik ke index operator.
+        if ($user->role == 'admin') {
+            return redirect()->route('admin.users.index')->with('success', 'Admin berhasil ditambahkan!');
+        } else {
+            return redirect()->route('admin.users.operator')->with('success', 'Operator berhasil ditambahkan!');
+        }
     }
 
     /**
@@ -91,7 +99,10 @@ class UserController extends Controller
     public function editProfile()
     {
         $user = Auth::user();
-        return view('profile.edit', compact('user'));
+        return view('profile.edit', [
+            'user' => $user,
+            'title' => 'Edit Profil' // Tambahkan ini
+        ]);
     }
 
     /**
@@ -128,6 +139,38 @@ class UserController extends Controller
         $user->save();
 
         return back()->with('success', 'Profil dan password berhasil diperbarui!');
+    }
+
+    public function edit($id)
+    {
+        $user = User::findOrFail($id);
+
+        return view('admin.users.edit', [
+            'user' => $user,
+            'title' => 'Edit Data User' // Tambahkan ini
+        ]);
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'role' => 'required|in:admin,operator',
+        ]);
+
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+        ]);
+
+        // LOGIKA REDIRECT BIAR GAK NYASAR:
+        if ($user->role == 'admin') {
+            return redirect()->route('admin.users.index')->with('success', 'Data Admin berhasil diupdate');
+        } else {
+            return redirect()->route('admin.users.operator')->with('success', 'Data Operator berhasil diupdate');
+        }
     }
 
     /**

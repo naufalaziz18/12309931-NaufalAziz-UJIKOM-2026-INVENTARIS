@@ -9,6 +9,7 @@ class Borrow extends Model
 {
     use HasFactory;
 
+    // Tambahin ini kalau kolom di DB lo beda sama standar Laravel
     protected $fillable = [
         'borrower_name',
         'product_id',
@@ -16,20 +17,16 @@ class Borrow extends Model
         'quantity',
         'return_date',
         'description',
-        'status',
+        'status'
     ];
 
-    /**
-     * Relasi ke Barang (Product)
-     */
+    // 1. Relasi ke Product (Ini yang dipake buat update stok)
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * Relasi ke Operator (User)
-     */
+    // 2. Relasi ke User (Ini yang dipake buat "Edited By")
     public function user()
     {
         return $this->belongsTo(User::class);

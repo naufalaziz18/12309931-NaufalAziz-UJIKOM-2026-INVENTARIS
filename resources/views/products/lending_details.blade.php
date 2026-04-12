@@ -74,19 +74,18 @@
 
                             {{-- 6. Date --}}
                             <td class="px-4 py-6 text-slate-600">
-                                {{ \Carbon\Carbon::parse($borrow->borrow_date)->format('d F, Y') }}
+                                {{-- Gunakan created_at kalau borrow_date lo kosong --}}
+                                {{ $borrow->created_at->format('d F, Y') }}
                             </td>
 
-                            {{-- 7. Status (Sesuai database lo: 'dikembalikan' vs 'dipinjam') --}}
+                            {{-- 7. Status --}}
                             <td class="px-4 py-6 text-center">
                                 @if($borrow->status == 'dikembalikan')
-                                    {{-- Status: Sudah Pulang --}}
                                     <div
                                         class="px-3 py-1 border border-emerald-200 text-emerald-500 rounded text-[10px] font-bold uppercase inline-block">
                                         returned
                                     </div>
                                 @else
-                                    {{-- Status: Selain 'dikembalikan', berarti masih dipinjam --}}
                                     <div
                                         class="px-3 py-1 border border-amber-200 text-amber-500 rounded text-[10px] font-bold inline-block uppercase">
                                         not returned
@@ -94,9 +93,10 @@
                                 @endif
                             </td>
 
-                            {{-- 8. Edited By --}}
-                            <td class="px-8 py-6 text-right font-black text-slate-900 lowercase italic">
-                                {{ auth()->user()->name ?? 'operator wikrama' }}
+                            {{-- 8. Edited By (Operator yang menginput) --}}
+                            <td class="px-8 py-6 text-right font-black text-indigo-600 text-xs uppercase tracking-tighter">
+                                {{-- Memanggil relasi user dari model Borrow --}}
+                                {{ $borrow->user->name ?? 'System Operator' }}
                             </td>
                         </tr>
                     @empty

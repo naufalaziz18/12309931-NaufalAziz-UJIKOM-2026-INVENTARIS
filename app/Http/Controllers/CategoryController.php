@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -66,7 +67,7 @@ class CategoryController extends Controller
 
         $category->update($request->all());
 
-        return redirect()->route('products.admin.categories.index')
+        return redirect()->route('admin.categories.index')
             ->with('success', 'Kategori berhasil diperbarui!');
     }
 
@@ -80,23 +81,75 @@ class CategoryController extends Controller
 
     public function exportExcel()
     {
-        return Excel::download(new class implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\ShouldAutoSize {
+        return Excel::download(new class implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles {
+
             public function collection()
             {
                 // Mengambil kategori beserta jumlah produk (menggunakan withCount)
-                return Category::withCount('products')->get()->map(function ($c, $index) {
+                return \App\Models\Category::withCount('products')->get()->map(function ($c, $index) {
                     return [
-                        'No' => $index + 1,
-                        'Nama Kategori' => $c->name,
-                        'PJ Divisi' => $c->division_pj,
-                        'Total Produk' => $c->products_count . ' Items',
+                        $index + 1,
+                        strtoupper($c->name),      // Samakan jadi kapital biar tegas
+                        strtoupper($c->division_pj ?? '-'), // Kapital juga buat PJ Divisi
+                        $c->products_count . ' Items',
                     ];
                 });
             }
+
             public function headings(): array
             {
                 return ["NO", "NAMA KATEGORI", "PJ DIVISI", "TOTAL PRODUK"];
             }
+
+            public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+            {
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+
+                return [
+                    // Style Header - Biru cerah sesuai tema inventory lo
+                    1 => [
+                        'font' => [
+                            'bold' => true,
+                            'color' => ['rgb' => 'FFFFFF'],
+                            'size' => 12
+                        ],
+                        'fill' => [
+                            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => '2E2EFE'] // Biru cerah
+                        ],
+                        'alignment' => [
+                            'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER
+                        ]
+                    ],
+
+                    // Style Border - Hitam tipis merata di seluruh sel data
+                    'A1:' . $highestColumn . $highestRow => [
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                'color' => ['rgb' => '000000'],
+                            ],
+                        ],
+                        'alignment' => [
+                            'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                        ],
+                    ],
+                ];
+            }
         }, 'Kategori_Inventory_' . date('d-m-Y') . '.xlsx');
+    }
+
+    public function exportPdf()
+    {
+        // Set timezone ke WIB secara global untuk fungsi ini
+        date_default_timezone_set('Asia/Jakarta');
+
+        $categories = Category::withCount('products')->get();
+
+        $pdf = Pdf::loadView('admin.categories.pdf', compact('categories'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('Laporan_Kategori_' . date('d-m-Y') . '.pdf');
     }
 }

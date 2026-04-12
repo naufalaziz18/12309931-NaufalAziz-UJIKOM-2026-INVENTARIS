@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 // --- IMPORT EXCEL CORE ---
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -301,23 +302,63 @@ class ProductController extends Controller
     }
     public function exportAllExcel()
     {
-        return Excel::download(new class implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\ShouldAutoSize {
+        return Excel::download(new class implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles {
+
             public function collection()
             {
                 return Product::with('category')->get()->map(function ($p, $index) {
                     return [
-                        'No' => $index + 1,
-                        'Kategori' => $p->category->name ?? 'General',
-                        'Nama Barang' => $p->name,
-                        'Stok' => $p->stock,
+                        $index + 1,
+                        strtoupper($p->category->name ?? 'General'),
+                        strtoupper($p->name),
+                        $p->total_stock . ' Unit', // GANTI JADI total_stock
                     ];
                 });
             }
+
             public function headings(): array
             {
                 return ["NO", "KATEGORI", "NAMA BARANG", "STOK TERSEDIA"];
             }
+
+            public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+            {
+                $highestRow = $sheet->getHighestRow();
+                return [
+                    1 => [
+                        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                        'fill' => [
+                            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => '4F46E5'] // Biru
+                        ],
+                        'alignment' => ['horizontal' => 'center']
+                    ],
+                    'A1:D' . $highestRow => [
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                'color' => ['rgb' => '000000'],
+                            ],
+                        ],
+                        'alignment' => ['vertical' => 'center']
+                    ],
+                ];
+            }
         }, 'Total_Inventory_' . date('d-m-Y') . '.xlsx');
+    }
+
+    public function exportPdf()
+    {
+        // Set Timezone ke WIB agar waktu cetak akurat
+        date_default_timezone_set('Asia/Jakarta');
+
+        // Ambil data produk beserta kategori dan jumlah peminjaman (borrows)
+        $products = Product::with(['category', 'borrows'])->get();
+
+        $pdf = Pdf::loadView('admin.items.pdf', compact('products'))
+            ->setPaper('a4', 'landscape'); // Landscape biar muat banyak kolom
+
+        return $pdf->download('Laporan_Inventory_Items_' . date('d-m-Y') . '.pdf');
     }
 
     public function show($id)
