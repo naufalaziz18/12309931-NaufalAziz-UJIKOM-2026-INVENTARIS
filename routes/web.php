@@ -45,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/products/export-all', [ProductController::class, 'exportAllExcel'])->name('products.export.all');
     Route::get('/products/{id}/export', [ProductController::class, 'exportExcel'])->name('products.export');
     Route::get('/products/{product}/lendings', [ProductController::class, 'lendingDetails'])->name('products.lendings.details');
+    Route::get('/products/{id}/export-pdf', [ProductController::class, 'exportProductLendingPdf'])->name('products.exportLendingPdf');
     Route::post('/products/{product}/borrow', [ProductController::class, 'borrow'])->name('products.borrow');
     Route::post('/products/{product}/return', [ProductController::class, 'return'])->name('products.return');
 
@@ -78,6 +79,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/users/operator-list', [UserController::class, 'indexOperator'])->name('users.operator');
             Route::get('/users/operator-index', [UserController::class, 'indexOperator'])->name('users.index.operator');
             Route::get('/users/export/{role}', [UserController::class, 'exportExcel'])->name('admin.users.export');
+            Route::get('/users/export-pdf/{role}', [UserController::class, 'exportPdf'])->name('admin.users.export-pdf');
             // 3. Main User Resource
             Route::get('/users', [UserController::class, 'indexAdmin'])->name('users.index');
             Route::resource('users', UserController::class)->except(['index']);
@@ -98,6 +100,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/borrow/peminjaman', [PeminjamanController::class, 'store'])->name('borrow.store.alt');
         Route::patch('/borrow/{borrow}/return', [PeminjamanController::class, 'return'])->name('borrow.return');
         Route::get('/borrow/export', [ProductController::class, 'exportExcel'])->name('borrow.export');
+        Route::get('/borrow/export-pdf', [ProductController::class, 'exportBorrowPdf'])->name('borrow.exportPdf');  
+
     });
 
 });

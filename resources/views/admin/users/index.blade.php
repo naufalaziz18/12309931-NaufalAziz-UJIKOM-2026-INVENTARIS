@@ -175,16 +175,22 @@
             </div>
 
             <div style="display: flex; gap: 8px;">
-                {{-- TOMBOL EXPORT EXCEL --}}
-                {{-- Logika: Jika title mengandung 'admin', kirim parameter 'admin', jika tidak kirim 'operator' --}}
+                {{-- TOMBOL EXPORT PDF (TAMBAHAN BARU) --}}
+                {{-- Pakai logic yang sama buat nentuin role yang di-export --}}
+                <a href="{{ route('admin.admin.users.export-pdf', ['role' => str_contains(strtolower($title), 'admin') ? 'admin' : 'operator']) }}"
+                    class="btn-add-pro" style="background-color: #e11d48;"> {{-- Warna Merah Rose --}}
+                    <i class="fas fa-file-pdf me-2" style="font-size: 14px;"></i>
+                    PDF
+                </a>
+
+                {{-- TOMBOL EXPORT EXCEL (Sudah Ada) --}}
                 <a href="{{ route('admin.admin.users.export', str_contains(strtolower($title), 'admin') ? 'admin' : 'operator') }}"
                     class="btn-add-pro btn-excel">
                     <i class="fas fa-file-excel me-2" style="font-size: 14px;"></i>
-                    Export {{ str_replace('Data ', '', $title) }}
+                    Excel
                 </a>
 
-                {{-- TOMBOL TAMBAH --}}
-                {{-- Logika: Sama seperti export, nentuin role buat form create --}}
+                {{-- TOMBOL TAMBAH (Sudah Ada) --}}
                 <a href="{{ route('admin.users.create', ['role' => str_contains(strtolower($title), 'admin') ? 'admin' : 'operator']) }}"
                     class="btn-add-pro">
                     <i class="fas fa-plus me-2" style="font-size: 12px;"></i>

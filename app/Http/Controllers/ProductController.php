@@ -361,6 +361,33 @@ class ProductController extends Controller
         return $pdf->download('Laporan_Inventory_Items_' . date('d-m-Y') . '.pdf');
     }
 
+    public function exportProductLendingPdf($id)
+    {
+        date_default_timezone_set('Asia/Jakarta');
+
+        // Tarik produk beserta riwayat peminjamannya
+        $product = Product::with(['borrows.user'])->findOrFail($id);
+
+        $pdf = Pdf::loadView('products.lending_pdf', compact('product'))
+            ->setPaper('a4', 'landscape'); // Landscape biar kolomnya lega
+
+        return $pdf->download('Laporan_Lending_' . $product->name . '.pdf');
+    }
+
+    public function exportBorrowPdf()
+    {
+        date_default_timezone_set('Asia/Jakarta');
+
+        // Ambil semua data peminjaman
+        // Sesuaikan nama Model lu, kalau di route lu 'borrow' biasanya nama modelnya 'Borrow' atau 'Peminjaman'
+        $borrows = \App\Models\Borrow::with(['user', 'product'])->orderBy('created_at', 'desc')->get();
+
+        $pdf = Pdf::loadView('operator.pdf', compact('borrows'))
+            ->setPaper('a4', 'landscape'); // Landscape biar kolomnya lega
+
+        return $pdf->download('Laporan_Peminjaman_Operator_' . date('d-m-Y') . '.pdf');
+    }
+
     public function show($id)
     {
         // Jika $id bukan angka (misal isinya "export-all" karena salah rute)

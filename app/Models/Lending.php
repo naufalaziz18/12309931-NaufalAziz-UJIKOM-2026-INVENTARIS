@@ -8,4 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class Lending extends Model
 {
     use HasFactory;
+    
 }

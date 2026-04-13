@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class UserController extends Controller
 {
@@ -171,6 +172,20 @@ class UserController extends Controller
         } else {
             return redirect()->route('admin.users.operator')->with('success', 'Data Operator berhasil diupdate');
         }
+    }
+
+    public function exportPdf($role)
+    {
+        date_default_timezone_set('Asia/Jakarta');
+
+        // Ambil user sesuai role yang diklik (admin atau operator)
+        $users = User::where('role', $role)->get();
+        $title = "Data " . ucfirst($role);
+
+        $pdf = Pdf::loadView('admin.users.pdf', compact('users', 'title'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('Laporan_User_' . $role . '_' . date('d-m-Y') . '.pdf');
     }
 
     /**

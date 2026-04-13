@@ -3,7 +3,7 @@
 @section('content')
     <div class="flex justify-between items-end mb-8">
         <div>
-            <a href="{{ route('products.index') }}"
+            <a href="{{ route('admin.items.index') }}"
                 class="text-indigo-600 text-xs font-bold uppercase tracking-widest hover:text-indigo-800 transition-all flex items-center gap-2 mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -16,15 +16,31 @@
                     class="text-indigo-600 uppercase">{{ $product->name }}</span></p>
         </div>
 
-        {{-- TOMBOL EXCEL NYA DISINI BRAY --}}
-        <a href="{{ route('products.export', $product->id) }}"
-            class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 text-xs font-black uppercase tracking-widest">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Export Excel
-        </a>
+        {{-- WRAPPER TOMBOL BIAR SEJAJAR --}}
+        <div class="flex gap-3">
+
+            {{-- TOMBOL PDF NYA DISINI BRAY --}}
+            <a href="{{ route('products.exportLendingPdf', $product->id) }}"
+                class="flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-5 py-3 rounded-2xl shadow-lg shadow-rose-100 transition-all active:scale-95 text-xs font-black uppercase tracking-widest">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                PDF
+            </a>
+            {{-- TOMBOL EXCEL --}}
+            <a href="{{ route('products.export', $product->id) }}"
+                class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 text-xs font-black uppercase tracking-widest">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Excel
+            </a>
+
+        </div>
     </div>
 
     <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden">

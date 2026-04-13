@@ -2,29 +2,37 @@
 
 @section('content')
     <div class="space-y-6">
-       {{-- Header Section --}}
-<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-    <div>
-        <h1 class="text-xl font-black text-slate-800 tracking-tight">Daftar Peminjaman</h1>
-        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-0.5">Monitoring Arus Barang Keluar</p>
-    </div>
+        {{-- Header Section --}}
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-xl font-black text-slate-800 tracking-tight">Daftar Peminjaman</h1>
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-0.5">Monitoring Arus Barang
+                    Keluar</p>
+            </div>
 
-    <div class="flex items-center gap-2">
-        {{-- Tombol Ekspor Excel --}}
-        <a href="{{ route('operator.borrow.export') }}"
-            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-600 hover:text-white transition-all shadow-sm active:scale-95">
-            <i class="fa-solid fa-file-excel text-xs"></i>
-            Ekspor
-        </a>
+            <div class="flex items-center gap-2">
+                {{-- TOMBOL EKSPOR PDF (TAMBAHAN) --}}
+                <a href="{{ route('operator.borrow.exportPdf') }}"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-95">
+                    <i class="fa-solid fa-file-pdf text-xs"></i>
+                    PDF
+                </a>
 
-        {{-- Tombol Tambah --}}
-        <a href="{{ route('operator.borrow.create') }}"
-            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-95">
-            <i class="fa-solid fa-plus text-xs"></i>
-            Tambah
-        </a>
-    </div>
-</div>
+                {{-- Tombol Ekspor Excel --}}
+                <a href="{{ route('operator.borrow.export') }}"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-600 hover:text-white transition-all shadow-sm active:scale-95">
+                    <i class="fa-solid fa-file-excel text-xs"></i>
+                    Excel
+                </a>
+
+                {{-- Tombol Tambah --}}
+                <a href="{{ route('operator.borrow.create') }}"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-95">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    Tambah
+                </a>
+            </div>
+        </div>
 
         {{-- Table Card --}}
         <div class="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
@@ -53,9 +61,11 @@
                                         </div>
                                         <div>
                                             <p class="text-sm font-black text-slate-800 leading-tight">
-                                                {{ $borrow->borrower_name }}</p>
+                                                {{ $borrow->borrower_name }}
+                                            </p>
                                             <p class="text-[10px] font-bold text-indigo-500 uppercase mt-1">
-                                                {{ $borrow->product->name }}</p>
+                                                {{ $borrow->product->name }}
+                                            </p>
                                         </div>
                                     </div>
                                 </td>
