@@ -34,6 +34,17 @@ class ProductController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+
+            // CEK ROLE USER SETELAH LOGIN
+            $user = Auth::user();
+
+            if ($user->role === 'admin') {
+                return redirect()->intended(route('admin.items.index')); // Ke Dashboard Admin
+            } elseif ($user->role === 'operator') {
+                return redirect()->intended(route('operator.borrow.index')); // Ke Dashboard Operator
+            }
+
+            // Default jika role tidak jelas
             return redirect()->intended(route('products.index'));
         }
 
@@ -236,7 +247,7 @@ class ProductController extends Controller
     }
 
     // --- EXPORT EXCEL ---
-    public function exportExcel($id)
+    public function exportExcelPeminjaman($id)
     {
         $product = Product::with('borrows')->findOrFail($id);
 
