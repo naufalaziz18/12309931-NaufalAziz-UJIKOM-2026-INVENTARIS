@@ -152,6 +152,16 @@
             border: none;
         }
 
+        .swal-title-custom {
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            color: #1e293b !important;
+        }
+
+        .swal-popup-custom {
+            border-radius: 12px !important;
+        }
+
         /* Tombol Excel khusus biar beda warnanya tapi tetep satu style */
         .btn-excel {
             background: #10b981;
@@ -242,11 +252,10 @@
                                         title="Edit">
                                         <i class="fas fa-pen" style="font-size: 12px;"></i>
                                     </a>
-                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
-                                        style="margin:0;">
+                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="margin:0;"
+                                        class="delete-form">
                                         @csrf @method('DELETE')
-                                        <button type="submit" class="action-btn btn-delete"
-                                            onclick="return confirm('Hapus data ini bray?')">
+                                        <button type="button" class="action-btn btn-delete delete-btn">
                                             <i class="fas fa-trash" style="font-size: 12px;"></i>
                                         </button>
                                     </form>
@@ -280,4 +289,33 @@
     </div>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function (e) {
+                const form = this.closest('form');
+
+                Swal.fire({
+                    title: 'Hapus data ini bray?',
+                    text: "Data yang dihapus nggak bakal bisa balik lagi lho!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444', // Warna merah sesuai btn-delete kamu
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    background: '#ffffff',
+                    customClass: {
+                        title: 'swal-title-custom',
+                        popup: 'swal-popup-custom'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    </script>
 @endsection
