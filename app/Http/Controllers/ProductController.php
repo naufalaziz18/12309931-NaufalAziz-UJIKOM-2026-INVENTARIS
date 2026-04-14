@@ -252,13 +252,25 @@ class ProductController extends Controller
         $product = Product::with('borrows')->findOrFail($id);
 
         return Excel::download(
-            new class ($product) implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles {
+            new class ($product) implements
+            \Maatwebsite\Excel\Concerns\FromCollection,
+            \Maatwebsite\Excel\Concerns\WithHeadings,
+            \Maatwebsite\Excel\Concerns\WithMapping,
+            \Maatwebsite\Excel\Concerns\ShouldAutoSize,
+            \Maatwebsite\Excel\Concerns\WithStyles,
+            \Maatwebsite\Excel\Concerns\WithCustomStartCell {
+
             protected $product;
             private $rowNumber = 0;
 
             public function __construct($product)
             {
                 $this->product = $product;
+            }
+
+            public function startCell(): string
+            {
+                return 'A4'; // Tabel mulai dari baris 4
             }
 
             public function collection()
@@ -268,92 +280,179 @@ class ProductController extends Controller
 
             public function headings(): array
             {
-                return ["NO", "NAMA PEMINJAM", "NAMA BARANG", "JUMLAH", "TANGGAL PINJAM", "BATAS KEMBALI", "STATUS"];
-            }
-
-            public function styles(Worksheet $sheet)
-            {
+                // Selaraskan kolom: Tambah JAM KEMBALI
                 return [
-                1 => [
-                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                    'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => '4F46E5']
-                        ],
-                    'alignment' => ['horizontal' => 'center']
-                    ],
-                'A1:G' . ($this->product->borrows->count() + 1) => [
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                            'color' => ['rgb' => '000000'],
-                            ],
-                        ],
-                    'alignment' => ['vertical' => 'center']
-                    ],
+                "NO",
+                "NAMA PEMINJAM",
+                "NAMA BARANG",
+                "JUMLAH",
+                "TANGGAL PINJAM",
+                "BATAS KEMBALI",
+                "STATUS",
+                "JAM KEMBALI"
                 ];
             }
 
             public function map($borrow): array
             {
                 $this->rowNumber++;
+
+                // Logika Jam Kembali (Sinkron dengan PDF & View)
+                $jamKembali = '-';
+                if ($borrow->status == 'dikembalikan') {
+                    $jamKembali = $borrow->actual_return_date
+                    ? \Carbon\Carbon::parse($borrow->actual_return_date)->format('d/m/Y H:i') . " WIB"
+                    : $borrow->updated_at->format('d/m/Y H:i') . " WIB";
+                }
+
                 return [
                     $this->rowNumber,
                     strtoupper($borrow->borrower_name),
-                    $this->product->name,
+                    strtoupper($this->product->name),
                     $borrow->quantity . " Unit",
-                    $borrow->created_at->format('d/m/Y H:i'),
-                    \Carbon\Carbon::parse($borrow->return_date)->format('d/m/Y'),
+                    $borrow->created_at->format('d/m/Y H:i') . " WIB",
+                    $borrow->return_date ? \Carbon\Carbon::parse($borrow->return_date)->format('d/m/Y') : '-',
                     $borrow->status == 'dikembalikan' ? 'SUDAH KEMBALI' : 'MASIH DIPINJAM',
+                $jamKembali
                 ];
-            }
-            },
-            'Laporan_Peminjaman_' . $product->name . '.xlsx'
-        );
-    }
-    public function exportAllExcel()
-    {
-        return Excel::download(new class implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles {
-
-            public function collection()
-            {
-                return Product::with('category')->get()->map(function ($p, $index) {
-                    return [
-                        $index + 1,
-                        strtoupper($p->category->name ?? 'General'),
-                        strtoupper($p->name),
-                        $p->total_stock . ' Unit', // GANTI JADI total_stock
-                    ];
-                });
-            }
-
-            public function headings(): array
-            {
-                return ["NO", "KATEGORI", "NAMA BARANG", "STOK TERSEDIA"];
             }
 
             public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
             {
+                // 1. Judul Laporan
+                $sheet->setCellValue('A1', 'LAPORAN DETAIL PEMINJAMAN BARANG');
+                $sheet->mergeCells('A1:H1');
+                $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+                $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+                // 2. Info Detail Produk
+                $sheet->setCellValue('A2', 'ITEM: ' . strtoupper($this->product->name) . ' | TANGGAL CETAK: ' . date('d/m/Y H:i') . ' WIB');
+                $sheet->mergeCells('A2:H2');
+                $sheet->getStyle('A2')->getFont()->setBold(true);
+                $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
+
                 $highestRow = $sheet->getHighestRow();
-                return [
-                    1 => [
-                        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                        'fill' => [
-                            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => '4F46E5'] // Biru
-                        ],
-                        'alignment' => ['horizontal' => 'center']
+
+                // 3. Styling Header Tabel (Baris 4)
+                $sheet->getStyle('A4:H4')->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => '4F46E5'] // Indigo
                     ],
-                    'A1:D' . $highestRow => [
-                        'borders' => [
-                            'allBorders' => [
-                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                                'color' => ['rgb' => '000000'],
-                            ],
+                    'alignment' => [
+                        'horizontal' => 'center',
+                        'vertical' => 'center'
+                    ]
+                ]);
+
+                // 4. Border dan Alignment Data
+                $sheet->getStyle('A4:H' . $highestRow)->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => '000000'],
                         ],
-                        'alignment' => ['vertical' => 'center']
                     ],
-                ];
+                ]);
+
+                // 5. Tengahin Kolom Tertentu
+                $sheet->getStyle('A4:A' . $highestRow)->getAlignment()->setHorizontal('center'); // No
+                $sheet->getStyle('D4:H' . $highestRow)->getAlignment()->setHorizontal('center'); // Qty sampai Jam Kembali
+
+                return [];
+            }
+            },
+            'Laporan_Peminjaman_' . str_replace(' ', '_', $product->name) . '_' . date('dmY') . '.xlsx'
+        );
+    }
+    public function exportAllExcel()
+    {
+        return Excel::download(new class implements
+            \Maatwebsite\Excel\Concerns\FromCollection,
+            \Maatwebsite\Excel\Concerns\WithHeadings,
+            \Maatwebsite\Excel\Concerns\ShouldAutoSize,
+            \Maatwebsite\Excel\Concerns\WithStyles,
+            \Maatwebsite\Excel\Concerns\WithCustomStartCell {
+
+            public function startCell(): string
+            {
+                return 'A4'; // Data tabel mulai dari sel A4
+            }
+
+            public function collection()
+            {
+                // PERBAIKAN: Pakai withSum untuk menjumlahkan isi kolom 'quantity'
+                return \App\Models\Product::with('category')
+                    ->withSum([
+                        'borrows as total_unit_pinjam' => function ($query) {
+                            $query->where('status', 'dipinjam');
+                        }
+                    ], 'quantity')
+                    ->get()
+                    ->map(function ($p, $index) {
+                        return [
+                            $index + 1,
+                            strtoupper($p->category->name ?? 'GENERAL'),
+                            strtoupper($p->name),
+                            $p->total_stock . ' Unit',
+                            ($p->total_unit_pinjam ?? 0) . ' Unit', // Realtime & Akurat
+                        ];
+                    });
+            }
+
+            public function headings(): array
+            {
+                return ["NO", "KATEGORI", "NAMA BARANG", "STOK TERSEDIA", "TOTAL DIPINJAM"];
+            }
+
+            public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+            {
+                // 1. Tambah Judul Utama (Merge sampai kolom E)
+                $sheet->setCellValue('A1', 'LAPORAN REKAPITULASI INVENTARIS BARANG');
+                $sheet->mergeCells('A1:E1');
+                $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+                $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+                // 2. Info Tanggal Cetak (Merge sampai kolom E)
+                $sheet->setCellValue('A2', 'Status Data Per: ' . date('d/m/Y H:i') . ' WIB');
+                $sheet->mergeCells('A2:E2');
+                $sheet->getStyle('A2')->getFont()->setItalic(true);
+                $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
+
+                $highestRow = $sheet->getHighestRow();
+
+                // 3. Styling Header Tabel (Baris 4, Kolom A sampai E)
+                $sheet->getStyle('A4:E4')->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => '4F46E5'] // Biru Indigo
+                    ],
+                    'alignment' => [
+                        'horizontal' => 'center',
+                        'vertical' => 'center'
+                    ]
+                ]);
+
+                // 4. Border dan Alignment Data (Kolom A sampai E)
+                $sheet->getStyle('A4:E' . $highestRow)->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => '000000'],
+                        ],
+                    ],
+                    'alignment' => [
+                        'vertical' => 'center'
+                    ]
+                ]);
+
+                // 5. Tengahin kolom NO, STOK, dan TOTAL DIPINJAM
+                $sheet->getStyle('A4:A' . $highestRow)->getAlignment()->setHorizontal('center');
+                $sheet->getStyle('D4:E' . $highestRow)->getAlignment()->setHorizontal('center');
+
+                return [];
             }
         }, 'Total_Inventory_' . date('d-m-Y') . '.xlsx');
     }
@@ -361,16 +460,28 @@ class ProductController extends Controller
     // Tambahkan ini di dalam class ProductController
     public function adminExport($id)
     {
-        $product = Product::with('borrows.user')->findOrFail($id);
+        $product = Product::with('borrows')->findOrFail($id);
 
         return Excel::download(
-            new class ($product) implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles {
+            new class ($product) implements
+            \Maatwebsite\Excel\Concerns\FromCollection,
+            \Maatwebsite\Excel\Concerns\WithHeadings,
+            \Maatwebsite\Excel\Concerns\WithMapping,
+            \Maatwebsite\Excel\Concerns\ShouldAutoSize,
+            \Maatwebsite\Excel\Concerns\WithStyles,
+            \Maatwebsite\Excel\Concerns\WithCustomStartCell {
+
             protected $product;
             private $rowNumber = 0;
 
             public function __construct($product)
             {
                 $this->product = $product;
+            }
+
+            public function startCell(): string
+            {
+                return 'A4'; // Data mulai di baris 4
             }
 
             public function collection()
@@ -380,42 +491,91 @@ class ProductController extends Controller
 
             public function headings(): array
             {
-                return ["NO", "NAMA PEMINJAM", "JUMLAH", "TANGGAL PINJAM", "STATUS"];
+                return ["NO", "NAMA PEMINJAM", "JUMLAH", "TANGGAL PINJAM", "STATUS", "TANGGAL KEMBALI"];
             }
 
             public function map($borrow): array
             {
                 $this->rowNumber++;
+
+                // Logika Jam Kembali yang selaras
+                $jamKembali = '-';
+                if ($borrow->status == 'dikembalikan') {
+                    $jamKembali = $borrow->actual_return_date
+                    ? \Carbon\Carbon::parse($borrow->actual_return_date)->format('d/m/Y H:i') . " WIB"
+                    : $borrow->updated_at->format('d/m/Y H:i') . " WIB";
+                }
+
                 return [
                     $this->rowNumber,
                     strtoupper($borrow->borrower_name),
                     $borrow->quantity . " Unit",
-                    $borrow->created_at->format('d/m/Y'),
+                    $borrow->created_at->format('d/m/Y H:i') . " WIB",
                     strtoupper($borrow->status),
+                $jamKembali
                 ];
             }
 
-            public function styles(Worksheet $sheet)
+            public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
             {
-                return [
-                1 => ['font' => ['bold' => true]],
-                ];
+                // 1. Judul Utama
+                $sheet->setCellValue('A1', 'LAPORAN DETAIL PEMINJAMAN PER BARANG');
+                $sheet->mergeCells('A1:F1');
+                $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+                $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+                // 2. Info Barang (Nama Produk)
+                $sheet->setCellValue('A2', 'ITEM: ' . strtoupper($this->product->name) . ' | TANGGAL CETAK: ' . date('d/m/Y H:i') . ' WIB');
+                $sheet->mergeCells('A2:F2');
+                $sheet->getStyle('A2')->getFont()->setBold(true);
+                $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
+
+                $highestRow = $sheet->getHighestRow();
+
+                // 3. Styling Header Tabel (Baris 4)
+                $sheet->getStyle('A4:F4')->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => '4338CA'] // Warna Indigo sesuai style PDF lu
+                    ],
+                    'alignment' => ['horizontal' => 'center']
+                ]);
+
+                // 4. Border Seluruh Tabel
+                $sheet->getStyle('A4:F' . $highestRow)->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+
+                // 5. Alignment Kolom
+                $sheet->getStyle('A4:A' . $highestRow)->getAlignment()->setHorizontal('center'); // No
+                $sheet->getStyle('C4:F' . $highestRow)->getAlignment()->setHorizontal('center'); // Qty, Tanggal, Status, Kembali
+
+                return [];
             }
             },
-            'Detail_Pinjam_' . $product->name . '.xlsx'
+            'Detail_Pinjam_' . str_replace(' ', '_', $product->name) . '_' . date('dmY') . '.xlsx'
         );
     }
 
     public function exportPdf()
     {
-        // Set Timezone ke WIB agar waktu cetak akurat
         date_default_timezone_set('Asia/Jakarta');
 
-        // Ambil data produk beserta kategori dan jumlah peminjaman (borrows)
-        $products = Product::with(['category', 'borrows'])->get();
+        $products = Product::with(['category'])
+            ->withSum([
+                'borrows as total_pinjam' => function ($query) {
+                    $query->where('status', 'dipinjam');
+                }
+            ], 'quantity') // Pakai withSum untuk total unit
+            ->get();
 
         $pdf = Pdf::loadView('admin.items.pdf', compact('products'))
-            ->setPaper('a4', 'landscape'); // Landscape biar muat banyak kolom
+            ->setPaper('a4', 'landscape');
 
         return $pdf->download('Laporan_Inventory_Items_' . date('d-m-Y') . '.pdf');
     }
@@ -448,48 +608,107 @@ class ProductController extends Controller
     }
 
     public function exportBorrowExcel()
-{
-    return Excel::download(new class implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithMapping, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles {
-        
-        public function collection()
-        {
-            // Ambil data peminjaman, bukan data produk
-            return \App\Models\Borrow::with('product')->latest()->get();
-        }
+    {
+        return Excel::download(new class implements
+            \Maatwebsite\Excel\Concerns\FromCollection,
+            \Maatwebsite\Excel\Concerns\WithHeadings,
+            \Maatwebsite\Excel\Concerns\WithMapping,
+            \Maatwebsite\Excel\Concerns\ShouldAutoSize,
+            \Maatwebsite\Excel\Concerns\WithStyles,
+            \Maatwebsite\Excel\Concerns\WithCustomStartCell {
+            // Tentukan data mulai dari sel A4 karena A1-A2 buat Judul
+            public function startCell(): string
+            {
+                return 'A4';
+            }
 
-        public function headings(): array
-        {
-            return ["NO", "NAMA PEMINJAM", "BARANG", "JUMLAH", "TANGGAL PINJAM", "STATUS"];
-        }
+            public function collection()
+            {
+                return \App\Models\Borrow::with('product')->latest()->get();
+            }
 
-        public function map($borrow): array
-        {
-            static $no = 0;
-            return [
-                ++$no,
-                strtoupper($borrow->borrower_name),
-                strtoupper($borrow->product->name),
-                $borrow->quantity . " Unit",
-                $borrow->created_at->format('d/m/Y H:i') . " WIB",
-                strtoupper($borrow->status)
-            ];
-        }
+            public function headings(): array
+            {
+                return [
+                    "NO",
+                    "NAMA PEMINJAM",
+                    "BARANG",
+                    "JUMLAH",
+                    "TANGGAL PINJAM",
+                    "BATAS KEMBALI",
+                    "STATUS",
+                    "JAM KEMBALI"
+                ];
+            }
 
-        public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
-        {
-            return [
-                1 => [
+            public function map($borrow): array
+            {
+                static $no = 0;
+                $jamKembali = '-';
+                if ($borrow->status == 'dikembalikan') {
+                    $jamKembali = $borrow->actual_return_date
+                        ? \Carbon\Carbon::parse($borrow->actual_return_date)->format('d/m/Y H:i') . " WIB"
+                        : $borrow->updated_at->format('d/m/Y H:i') . " WIB";
+                }
+
+                return [
+                    ++$no,
+                    strtoupper($borrow->borrower_name),
+                    strtoupper($borrow->product->name),
+                    $borrow->quantity . " Unit",
+                    $borrow->created_at->format('d/m/Y H:i') . " WIB",
+                    $borrow->return_date ? \Carbon\Carbon::parse($borrow->return_date)->format('d/m/Y') : '-',
+                    strtoupper($borrow->status),
+                    $jamKembali
+                ];
+            }
+
+            public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+            {
+                // 1. Tambahin Judul di Baris 1
+                $sheet->setCellValue('A1', 'LAPORAN DETAIL PEMINJAMAN BARANG');
+                $sheet->mergeCells('A1:H1'); // Gabungin sel A sampe H
+
+                // 2. Tambahin Info Tanggal Cetak di Baris 2
+                $sheet->setCellValue('A2', 'Tanggal Cetak: ' . date('d/m/Y H:i') . ' WIB');
+                $sheet->mergeCells('A2:H2');
+
+                // 3. Styling Judul (Baris 1)
+                $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+                $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+                // 4. Styling Info Cetak (Baris 2)
+                $sheet->getStyle('A2')->getFont()->setItalic(true);
+                $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
+
+                // 5. Styling Header Tabel (Baris 4 - Karena StartCell di A4)
+                $headerStyle = [
                     'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                     'fill' => [
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
                         'startColor' => ['rgb' => '4F46E5']
                     ],
-                ],
-            ];
-        }
-    }, 'Laporan_Peminjaman_' . date('d-m-Y') . '.xlsx');
-}
+                    'alignment' => [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    ],
+                ];
 
+                // 6. Kasih Border ke seluruh tabel yang ada datanya
+                $highestRow = $sheet->getHighestRow();
+                $sheet->getStyle('A4:H' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+                // 7. Alignment Tengah untuk kolom tertentu (No, Jumlah, Status, Jam)
+                $sheet->getStyle('A4:A' . $highestRow)->getAlignment()->setHorizontal('center'); // No
+                $sheet->getStyle('D4:D' . $highestRow)->getAlignment()->setHorizontal('center'); // Jumlah
+                $sheet->getStyle('G4:H' . $highestRow)->getAlignment()->setHorizontal('center'); // Status & Jam
+
+                return [
+                    4 => $headerStyle,
+                ];
+            }
+        }, 'Laporan_Peminjaman_' . date('d-m-Y') . '.xlsx');
+    }
     public function show($id)
     {
         // Jika $id bukan angka (misal isinya "export-all" karena salah rute)

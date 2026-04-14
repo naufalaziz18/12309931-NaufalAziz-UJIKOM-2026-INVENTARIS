@@ -47,10 +47,102 @@ class UserController extends Controller
      */
     public function exportExcel($role)
     {
-        // Pastikan variabel $role isinya valid (admin/operator)
-        $fileName = 'Data_' . ucfirst($role) . '_' . date('Y-m-d') . '.xlsx';
+        // Pastikan role huruf kapital untuk judul & nama file
+        $displayRole = ucfirst($role);
+        $fileName = 'Data_User_' . $displayRole . '_' . date('d-m-Y') . '.xlsx';
 
-        return Excel::download(new UsersExport($role), $fileName);
+        return Excel::download(
+            new class ($role, $displayRole) implements
+            \Maatwebsite\Excel\Concerns\FromCollection,
+            \Maatwebsite\Excel\Concerns\WithHeadings,
+            \Maatwebsite\Excel\Concerns\ShouldAutoSize,
+            \Maatwebsite\Excel\Concerns\WithStyles,
+            \Maatwebsite\Excel\Concerns\WithCustomStartCell {
+
+            protected $role;
+            protected $displayRole;
+
+            public function __construct($role, $displayRole)
+            {
+                $this->role = $role;
+                $this->displayRole = $displayRole;
+            }
+
+            public function startCell(): string
+            {
+                return 'A4'; // Selaras: tabel mulai di baris 4
+            }
+
+            public function collection()
+            {
+                // Ambil user berdasarkan role
+                return \App\Models\User::where('role', $this->role)->get()->map(function ($u, $index) {
+                    return [
+                        $index + 1,
+                        strtoupper($u->name),
+                        $u->email,
+                        strtoupper($u->role),
+                        $u->created_at->format('d/m/Y'),
+                    ];
+                });
+            }
+
+            public function headings(): array
+            {
+                return ["NO", "NAMA LENGKAP", "EMAIL", "ROLE", "TANGGAL JOIN"];
+            }
+
+            public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+            {
+                // 1. Judul Utama (Baris 1)
+                $sheet->setCellValue('A1', 'LAPORAN DATA USER - ' . strtoupper($this->displayRole));
+                $sheet->mergeCells('A1:E1');
+                $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+                $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+                // 2. Info Tanggal Cetak (Baris 2)
+                $sheet->setCellValue('A2', 'Dicetak pada: ' . date('d/m/Y H:i') . ' WIB');
+                $sheet->mergeCells('A2:E2');
+                $sheet->getStyle('A2')->getFont()->setItalic(true);
+                $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
+
+                $highestRow = $sheet->getHighestRow();
+
+                // 3. Styling Header Tabel (Baris 4) - Biru Indigo selaras dengan Produk
+                $sheet->getStyle('A4:E4')->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => 'FFFFFF']
+                    ],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => '4F46E5']
+                    ],
+                    'alignment' => [
+                        'horizontal' => 'center',
+                        'vertical' => 'center'
+                    ]
+                ]);
+
+                // 4. Border Hitam Pekat & Alignment
+                $sheet->getStyle('A4:E' . $highestRow)->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => '000000'],
+                        ],
+                    ],
+                ]);
+
+                // 5. Tengahin kolom NO, ROLE, dan TANGGAL
+                $sheet->getStyle('A5:A' . $highestRow)->getAlignment()->setHorizontal('center');
+                $sheet->getStyle('D5:E' . $highestRow)->getAlignment()->setHorizontal('center');
+
+                return [];
+            }
+            },
+            $fileName
+        );
     }
 
     /**

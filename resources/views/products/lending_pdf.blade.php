@@ -26,7 +26,6 @@
             margin-top: 10px;
         }
 
-        /* Header Tabel warna biru/ungu sesuai Excel */
         th {
             background-color: #4338ca;
             color: white;
@@ -46,26 +45,37 @@
         .text-center {
             text-align: center;
         }
+
+        /* Warna untuk status */
+        .status-returned {
+            color: #059669;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            color: #d97706;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
     <div class="header">
         <h2>LAPORAN DETAIL PEMINJAMAN BARANG</h2>
-        <p>Item: <strong>{{ $product->name }}</strong> | Tanggal Cetak: {{ date('d/m/Y H:i') }}</p>
+        <p>Item: <strong>{{ $product->name }}</strong> | Tanggal Cetak: {{ date('d/m/Y H:i') }} WIB</p>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>NO</th>
+                <th style="width: 30px;">NO</th>
                 <th>NAMA PEMINJAM</th>
-                <th>NAMA BARANG</th>
                 <th>JUMLAH</th>
                 <th>TANGGAL PINJAM</th>
                 <th>BATAS KEMBALI</th>
                 <th>KETERANGAN</th>
                 <th>STATUS</th>
+                <th>TANGGAL KEMBALI</th>
             </tr>
         </thead>
         <tbody>
@@ -73,30 +83,37 @@
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
 
-                    {{-- NAMA PEMINJAM: Di array lu ada field 'borrower_name' --}}
-                    <td>{{ $borrow->borrower_name ?? 'N/A' }}</td>
+                    {{-- NAMA PEMINJAM --}}
+                    <td>{{ strtoupper($borrow->borrower_name) ?? 'N/A' }}</td>
 
-                    {{-- NAMA BARANG --}}
-                    <td>{{ $product->name }}</td>
-
-                    {{-- JUMLAH: Nama kolomnya 'quantity' --}}
+                    {{-- JUMLAH --}}
                     <td class="text-center">{{ $borrow->quantity }} Unit</td>
 
                     {{-- TANGGAL PINJAM --}}
                     <td>{{ \Carbon\Carbon::parse($borrow->created_at)->format('d/m/Y H:i') }}</td>
 
-                    {{-- BATAS KEMBALI: Nama kolomnya 'return_date' --}}
+                    {{-- BATAS KEMBALI --}}
                     <td>{{ $borrow->return_date ? \Carbon\Carbon::parse($borrow->return_date)->format('d/m/Y') : '-' }}</td>
 
-                    {{-- KETERANGAN: Nama kolomnya 'description' --}}
+                    {{-- KETERANGAN --}}
                     <td>{{ $borrow->description ?? '-' }}</td>
 
-                    {{-- STATUS: Isinya 'dikembalikan' --}}
+                    {{-- STATUS --}}
                     <td class="text-center">
                         @if($borrow->status == 'dikembalikan')
-                            SUDAH KEMBALI
+                            <span class="status-returned">RETURNED</span>
                         @else
-                            MASIH DIPINJAM
+                            <span class="status-pending">PENDING</span>
+                        @endif
+                    </td>
+
+                    {{-- TANGGAL & JAM KEMBALI --}}
+                    <td class="text-center">
+                        @if($borrow->status == 'dikembalikan')
+                            {{-- Menggunakan actual_return_date dari controller lu --}}
+                            {{ $borrow->actual_return_date ? \Carbon\Carbon::parse($borrow->actual_return_date)->format('d/m/Y H:i') : $borrow->updated_at->format('d/m/Y H:i') }} WIB
+                        @else
+                            <span style="color: #94a3b8;">-</span>
                         @endif
                     </td>
                 </tr>

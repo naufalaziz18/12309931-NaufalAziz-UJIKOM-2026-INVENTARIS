@@ -81,12 +81,11 @@
                                 <td
                                     class="px-6 py-5 bg-slate-50/50 group-hover:bg-white border-y border-transparent group-hover:border-slate-200 text-center">
                                     <div class="flex flex-col items-center">
-                                        {{-- Tanggal Pinjam + Jam --}}
+                                        {{-- Tanggal Pinjam --}}
                                         <span class="text-[10px] font-bold text-slate-600">
                                             {{ $borrow->created_at->format('d/m/Y') }}
                                             <span
-                                                class="text-[9px] text-indigo-400 ml-0.5">{{ $borrow->created_at->format('H:i') }}
-                                                WIB</span>
+                                                class="text-[9px] text-indigo-400 ml-0.5">{{ $borrow->created_at->format('H:i') }}</span>
                                         </span>
 
                                         <i class="fa-solid fa-arrow-down text-[8px] my-0.5 text-slate-300"></i>
@@ -98,7 +97,7 @@
                                     </div>
                                 </td>
 
-                                {{-- Status Badge --}}
+                                {{-- Status Badge & Jam Kembali --}}
                                 <td
                                     class="px-6 py-5 bg-slate-50/50 group-hover:bg-white border-y border-transparent group-hover:border-slate-200 text-center">
                                     @if($borrow->status == 'dipinjam')
@@ -108,11 +107,18 @@
                                             On Loan
                                         </span>
                                     @else
-                                        <span
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-tighter border border-emerald-100">
-                                            <i class="fa-solid fa-check"></i>
-                                            Settled
-                                        </span>
+                                        <div class="flex flex-col items-center gap-1">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-tighter border border-emerald-100">
+                                                <i class="fa-solid fa-check text-[8px]"></i>
+                                                Settled
+                                            </span>
+                                            {{-- Jam Kembali Muncul di Sini --}}
+                                            <span class="text-[8px] font-bold text-slate-400 uppercase">
+                                                Returned:
+                                                {{ $borrow->actual_return_date ? \Carbon\Carbon::parse($borrow->actual_return_date)->format('H:i') : $borrow->updated_at->format('H:i') }}
+                                            </span>
+                                        </div>
                                     @endif
                                 </td>
 
@@ -132,21 +138,19 @@
                                             @csrf @method('PATCH')
                                         </form>
                                     @else
-                                        <div class="w-9 h-9 inline-flex items-center justify-center text-emerald-300">
-                                            <i class="fa-solid fa-circle-check text-xl"></i>
+                                        <div class="flex justify-end pr-2">
+                                            <div class="flex flex-col items-end">
+                                                <span
+                                                    class="text-[9px] font-black text-emerald-500 uppercase leading-none">Complete</span>
+                                                <span
+                                                    class="text-[8px] text-slate-300 font-bold leading-none mt-1">{{ \Carbon\Carbon::parse($borrow->actual_return_date ?? $borrow->updated_at)->format('d/m/Y') }}</span>
+                                            </div>
                                         </div>
                                     @endif
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="5" class="py-20 text-center">
-                                    <div class="flex flex-col items-center opacity-20">
-                                        <i class="fa-solid fa-box-open text-5xl mb-4"></i>
-                                        <p class="text-xs font-black uppercase tracking-widest">Belum ada transaksi</p>
-                                    </div>
-                                </td>
-                            </tr>
+                            {{-- Kode Empty Tetap Sama --}}
                         @endforelse
                     </tbody>
                 </table>

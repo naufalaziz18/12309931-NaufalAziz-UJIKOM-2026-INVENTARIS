@@ -104,12 +104,23 @@
                                 </div>
                             </td>
 
-                            {{-- 7. Status --}}
+                            {{-- 7. Status & Return Time --}}
                             <td class="px-4 py-6 text-center">
-                                @if($borrow->status == 'dikembalikan')
-                                    <div
-                                        class="px-3 py-1 border border-emerald-200 text-emerald-500 rounded text-[10px] font-bold uppercase inline-block">
-                                        returned
+                                @if(trim($borrow->status) == 'dikembalikan')
+                                    <div class="flex flex-col items-center">
+                                        <div
+                                            class="px-3 py-1 border border-emerald-200 text-emerald-500 rounded text-[10px] font-bold uppercase inline-block mb-1">
+                                            returned
+                                        </div>
+
+                                        {{-- Kita cek manual pakai Carbon kalau-kalau updated_at bermasalah --}}
+                                        <span class="text-[11px] text-slate-500 font-medium">
+                                            <i class="fa-regular fa-clock mr-1 text-[10px]"></i>
+                                            {{ $borrow->updated_at ? $borrow->updated_at->format('H:i') : '--:--' }} WIB
+                                        </span>
+                                        <span class="text-[9px] text-slate-400 italic">
+                                            {{ $borrow->updated_at ? $borrow->updated_at->format('d M Y') : '' }}
+                                        </span>
                                     </div>
                                 @else
                                     <div
