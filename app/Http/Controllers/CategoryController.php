@@ -75,7 +75,7 @@ class CategoryController extends Controller
     {
         $category->delete();
 
-        return redirect()->route('products.admin.categories.index')
+        return redirect()->route('admin.categories.index')
             ->with('success', 'Kategori berhasil dihapus!');
     }
 

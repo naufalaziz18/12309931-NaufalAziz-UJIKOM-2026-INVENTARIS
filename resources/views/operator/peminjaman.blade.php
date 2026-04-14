@@ -81,11 +81,20 @@
                                 <td
                                     class="px-6 py-5 bg-slate-50/50 group-hover:bg-white border-y border-transparent group-hover:border-slate-200 text-center">
                                     <div class="flex flex-col items-center">
-                                        <span
-                                            class="text-[10px] font-bold text-slate-600">{{ $borrow->created_at->format('d/m/Y') }}</span>
+                                        {{-- Tanggal Pinjam + Jam --}}
+                                        <span class="text-[10px] font-bold text-slate-600">
+                                            {{ $borrow->created_at->format('d/m/Y') }}
+                                            <span
+                                                class="text-[9px] text-indigo-400 ml-0.5">{{ $borrow->created_at->format('H:i') }}
+                                                WIB</span>
+                                        </span>
+
                                         <i class="fa-solid fa-arrow-down text-[8px] my-0.5 text-slate-300"></i>
-                                        <span
-                                            class="text-[10px] font-black text-amber-600">{{ \Carbon\Carbon::parse($borrow->return_date)->format('d/m/Y') }}</span>
+
+                                        {{-- Tenggat Kembali --}}
+                                        <span class="text-[10px] font-black text-amber-600">
+                                            {{ \Carbon\Carbon::parse($borrow->return_date)->format('d/m/Y') }}
+                                        </span>
                                     </div>
                                 </td>
 

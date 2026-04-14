@@ -87,6 +87,9 @@ Route::middleware(['auth'])->group(function () {
         Route:: as('products.admin.')->group(function () {
             Route::get('/dashboard-admin', [ProductController::class, 'adminIndex'])->name('index');
             Route::get('/items-admin', [ProductController::class, 'adminIndex'])->name('items.index');
+            Route::get('/export', [ProductController::class, 'exportAllExcel'])->name('export');
+            Route::get('/export/{id}', [ProductController::class, 'adminExport'])->name('export');
+             Route::get('/export-pdf/{id}', [ProductController::class, 'exportProductLendingPdf'])->name('exportPdf');
         });
     });
 
@@ -98,7 +101,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/borrow/store', [ProductController::class, 'processBorrow'])->name('borrow.store');
         Route::post('/borrow/peminjaman', [PeminjamanController::class, 'store'])->name('borrow.store.alt');
         Route::patch('/borrow/{borrow}/return', [PeminjamanController::class, 'return'])->name('borrow.return');
-        Route::get('/borrow/export', [ProductController::class, 'exportAllExcel'])->name('borrow.export');
+        Route::get('/borrow/export', [ProductController::class, 'exportBorrowExcel'])->name('borrow.export');
         Route::get('/borrow/export-pdf', [ProductController::class, 'exportBorrowPdf'])->name('borrow.exportPdf');
     });
 

@@ -358,6 +358,54 @@ class ProductController extends Controller
         }, 'Total_Inventory_' . date('d-m-Y') . '.xlsx');
     }
 
+    // Tambahkan ini di dalam class ProductController
+    public function adminExport($id)
+    {
+        $product = Product::with('borrows.user')->findOrFail($id);
+
+        return Excel::download(
+            new class ($product) implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles {
+            protected $product;
+            private $rowNumber = 0;
+
+            public function __construct($product)
+            {
+                $this->product = $product;
+            }
+
+            public function collection()
+            {
+                return $this->product->borrows;
+            }
+
+            public function headings(): array
+            {
+                return ["NO", "NAMA PEMINJAM", "JUMLAH", "TANGGAL PINJAM", "STATUS"];
+            }
+
+            public function map($borrow): array
+            {
+                $this->rowNumber++;
+                return [
+                    $this->rowNumber,
+                    strtoupper($borrow->borrower_name),
+                    $borrow->quantity . " Unit",
+                    $borrow->created_at->format('d/m/Y'),
+                    strtoupper($borrow->status),
+                ];
+            }
+
+            public function styles(Worksheet $sheet)
+            {
+                return [
+                1 => ['font' => ['bold' => true]],
+                ];
+            }
+            },
+            'Detail_Pinjam_' . $product->name . '.xlsx'
+        );
+    }
+
     public function exportPdf()
     {
         // Set Timezone ke WIB agar waktu cetak akurat
@@ -398,6 +446,49 @@ class ProductController extends Controller
 
         return $pdf->download('Laporan_Peminjaman_Operator_' . date('d-m-Y') . '.pdf');
     }
+
+    public function exportBorrowExcel()
+{
+    return Excel::download(new class implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithMapping, \Maatwebsite\Excel\Concerns\ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithStyles {
+        
+        public function collection()
+        {
+            // Ambil data peminjaman, bukan data produk
+            return \App\Models\Borrow::with('product')->latest()->get();
+        }
+
+        public function headings(): array
+        {
+            return ["NO", "NAMA PEMINJAM", "BARANG", "JUMLAH", "TANGGAL PINJAM", "STATUS"];
+        }
+
+        public function map($borrow): array
+        {
+            static $no = 0;
+            return [
+                ++$no,
+                strtoupper($borrow->borrower_name),
+                strtoupper($borrow->product->name),
+                $borrow->quantity . " Unit",
+                $borrow->created_at->format('d/m/Y H:i') . " WIB",
+                strtoupper($borrow->status)
+            ];
+        }
+
+        public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet)
+        {
+            return [
+                1 => [
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => '4F46E5']
+                    ],
+                ],
+            ];
+        }
+    }, 'Laporan_Peminjaman_' . date('d-m-Y') . '.xlsx');
+}
 
     public function show($id)
     {

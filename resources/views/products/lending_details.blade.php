@@ -30,7 +30,7 @@
                 PDF
             </a>
             {{-- TOMBOL EXCEL --}}
-            <a href="{{ route('products.export', $product->id) }}"
+            <a href="{{ route('products.admin.export', $product->id) }}"
                 class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-95 text-xs font-black uppercase tracking-widest">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -90,8 +90,18 @@
 
                             {{-- 6. Date --}}
                             <td class="px-4 py-6 text-slate-600">
-                                {{-- Gunakan created_at kalau borrow_date lo kosong --}}
-                                {{ $borrow->created_at->format('d F, Y') }}
+                                <div class="flex flex-col">
+                                    {{-- Tanggal --}}
+                                    <span class="font-bold text-sm">
+                                        {{ $borrow->created_at->format('d F, Y') }}
+                                    </span>
+                                    {{-- Jam WIB --}}
+                                    <span class="text-[11px] text-slate-400 font-medium">
+                                        <i
+                                            class="fa-regular fa-clock mr-1 text-[10px]"></i>{{ $borrow->created_at->format('H:i') }}
+                                        WIB
+                                    </span>
+                                </div>
                             </td>
 
                             {{-- 7. Status --}}
